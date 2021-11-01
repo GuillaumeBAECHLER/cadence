@@ -1409,7 +1409,6 @@ func ConvertInt(value Value) IntValue {
 		return NewIntValueFromBigInt(value.ToBigInt())
 
 	case NumberValue:
-		// NOTE: safe, UInt64Value is handled by BigNumberValue above
 		return NewIntValueFromInt64(int64(value.ToInt()))
 
 	default:
@@ -1459,7 +1458,9 @@ func (IntValue) SetModified(_ bool) {
 }
 
 func (v IntValue) ToInt() int {
-	// TODO: handle overflow
+	if !v.BigInt.IsInt64() {
+		panic(OverflowError{})
+	}
 	return int(v.BigInt.Int64())
 }
 
@@ -2927,7 +2928,9 @@ func (Int128Value) SetModified(_ bool) {
 }
 
 func (v Int128Value) ToInt() int {
-	// TODO: handle overflow
+	if !v.BigInt.IsInt64() {
+		panic(OverflowError{})
+	}
 	return int(v.BigInt.Int64())
 }
 
@@ -3305,7 +3308,9 @@ func (Int256Value) SetModified(_ bool) {
 }
 
 func (v Int256Value) ToInt() int {
-	// TODO: handle overflow
+	if !v.BigInt.IsInt64() {
+		panic(OverflowError{})
+	}
 	return int(v.BigInt.Int64())
 }
 
@@ -3704,7 +3709,9 @@ func (UIntValue) SetModified(_ bool) {
 }
 
 func (v UIntValue) ToInt() int {
-	// TODO: handle overflow
+	if v.BigInt.IsInt64() {
+		panic(OverflowError{})
+	}
 	return int(v.BigInt.Int64())
 }
 
@@ -4614,6 +4621,13 @@ func (UInt32Value) IsStorable() bool {
 
 type UInt64Value uint64
 
+// NOTE: important, do *NOT* remove:
+// UInt64 values > math.MaxInt64 overflow int.
+// Implementing BigNumberValue ensures conversion functions
+// call ToBigInt instead of ToInt.
+//
+var _ BigNumberValue = UInt64Value(0)
+
 func (UInt64Value) IsValue() {}
 
 func (v UInt64Value) Accept(interpreter *Interpreter, visitor Visitor) {
@@ -4668,7 +4682,21 @@ func (v UInt64Value) KeyString() string {
 }
 
 func (v UInt64Value) ToInt() int {
+	if v > math.MaxInt64 {
+		panic(OverflowError{})
+	}
 	return int(v)
+}
+
+// ToBigInt
+//
+// NOTE: important, do *NOT* remove:
+// UInt64 values > math.MaxInt64 overflow int.
+// Implementing BigNumberValue ensures conversion functions
+// call ToBigInt instead of ToInt.
+//
+func (v UInt64Value) ToBigInt() *big.Int {
+	return new(big.Int).SetUint64(uint64(v))
 }
 
 func (v UInt64Value) Negate() NumberValue {
@@ -4908,7 +4936,9 @@ func (UInt128Value) SetModified(_ bool) {
 }
 
 func (v UInt128Value) ToInt() int {
-	// TODO: handle overflow
+	if !v.BigInt.IsInt64() {
+		panic(OverflowError{})
+	}
 	return int(v.BigInt.Int64())
 }
 
@@ -5228,7 +5258,10 @@ func (UInt256Value) SetModified(_ bool) {
 }
 
 func (v UInt256Value) ToInt() int {
-	// TODO: handle overflow
+	if !v.BigInt.IsInt64() {
+		panic(OverflowError{})
+	}
+
 	return int(v.BigInt.Int64())
 }
 
@@ -6047,6 +6080,13 @@ func (Word32Value) IsStorable() bool {
 
 type Word64Value uint64
 
+// NOTE: important, do *NOT* remove:
+// Word64 values > math.MaxInt64 overflow int.
+// Implementing BigNumberValue ensures conversion functions
+// call ToBigInt instead of ToInt.
+//
+var _ BigNumberValue = Word64Value(0)
+
 func (Word64Value) IsValue() {}
 
 func (v Word64Value) Accept(interpreter *Interpreter, visitor Visitor) {
@@ -6101,7 +6141,21 @@ func (v Word64Value) KeyString() string {
 }
 
 func (v Word64Value) ToInt() int {
+	if v > math.MaxInt64 {
+		panic(OverflowError{})
+	}
 	return int(v)
+}
+
+// ToBigInt
+//
+// NOTE: important, do *NOT* remove:
+// Word64 values > math.MaxInt64 overflow int.
+// Implementing BigNumberValue ensures conversion functions
+// call ToBigInt instead of ToInt.
+//
+func (v Word64Value) ToBigInt() *big.Int {
+	return new(big.Int).SetUint64(uint64(v))
 }
 
 func (v Word64Value) Negate() NumberValue {
